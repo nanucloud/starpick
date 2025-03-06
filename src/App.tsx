@@ -1,17 +1,18 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import GroupPage from "./pages/GroupPage";
 
-const App: React.FC = () => {
+const App = () => {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        <Route path="/">
-          {/* <Route index element={<GroupPage />} /> */}
-          <Route path="*" element={<GroupPage />} />
-        </Route>
+        <Route path="/:groupName" element={<GroupPage />} />
+        <Route path="/:groupName/gallery" element={<GroupPage />} />
+        <Route path="/:groupName/community" element={<GroupPage />} />
+        <Route path="/:groupName/artists" element={<GroupPage />} />
+        <Route path="/:groupName/otherinfo" element={<GroupPage />} />
+        <Route path="/" element={<Navigate to="/ive" replace />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 };
 

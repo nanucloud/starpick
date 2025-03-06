@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Header from "../components/common/Header";
 import FilterGroup from "../components/group/GroupFilter";
 import GroupHeader from "../components/group/GroupHeader";
@@ -7,99 +7,152 @@ import GroupPhotoGallery from "../components/group/GroupPhotoGallery";
 import GroupNavigation from "../components/group/GroupNavigation";
 import GroupCommunity from "./Gallery/GroupCommunity";
 import GroupArtists from "./Gallery/GroupArtists";
+import GroupInfo from "./Gallery/GroupInfo";
+import { Loader } from "lucide-react";
+import Footer from './../components/common/Footer';
+
+interface GroupData {
+  id: string;
+  name: string;
+  description: string;
+  fanCount: number;
+}
+
+interface Photo {
+  id: string;
+  src: string;
+  alt: string;
+}
 
 const GroupPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { groupName } = useParams();
 
-  // URL에서 현재 경로 확인
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [groupInfo, setGroupInfo] = useState<GroupData | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState("MMA 2023");
+  const [selectedYear, setSelectedYear] = useState("2023");
+
+  const events = ["MMA 2023", "MAMA 2023"];
+  const years = ["2023", "2022"];
+
   const getActiveTabFromPath = (path: string) => {
-    const pathSegments = path.split("/");
-    const lastSegment = pathSegments[pathSegments.length - 1];
-
-    switch (lastSegment) {
-      case "community":
-        return "커뮤니티";
-      case "artists":
-        return "아티스트";
-      case "info":
-        return "기타 정보";
-      case "gallery":
-      default:
-        return "갤러리";
+    if (path.includes("/otherinfo")) {
+      return "기타 정보";
+    } else if (path.includes("/community")) {
+      return "커뮤니티";
+    } else if (path.includes("/artists")) {
+      return "아티스트";
+    } else {
+      return "갤러리";
     }
   };
 
-  const [activeTab, setActiveTab] = useState(() =>
+  const [activeTab, setActiveTab] = useState(() => 
     getActiveTabFromPath(location.pathname)
   );
-  const [selectedEvent, setSelectedEvent] = useState("MMA 2025");
-  const [selectedYear, setSelectedYear] = useState("2025");
-  const [isFollowing, setIsFollowing] = useState(false);
 
-  const groupInfo = {
-    name: "아이브 (IVE)",
-    description: "아이브의 StarPick 그룹입니다. 그리고 이건 설명이죠 하하",
-    fanCount: 488
-  };
+  useEffect(() => {
+    const fetchGroupData = async () => {
+      if (!groupName) return;
 
-  const handleFollowToggle = () => {
-    setIsFollowing(!isFollowing);
-    // 여기에 실제 팔로우/언팔로우 API 호출 로직을 추가할 수 있습니다
-  };
+      setLoading(true);
+      setError(null);
 
-  const photos = [
-    { id: "1", src: "/dummy.png", alt: "아이돌 사진 1" },
-    { id: "2", src: "/dummy.png?2", alt: "아이돌 사진 2" },
-    { id: "3", src: "/dummy.png?3", alt: "아이돌 사진 3" },
-    { id: "4", src: "/dummy.png?4", alt: "아이돌 사진 4" },
-    { id: "5", src: "/dummy.png?5", alt: "아이돌 사진 5" },
-    { id: "6", src: "/dummy.png?6", alt: "아이돌 사진 6" },
-    { id: "7", src: "/dummy.png?7", alt: "아이돌 사진 7" },
-    { id: "8", src: "/dummy.png?8", alt: "아이돌 사진 8" },
-    { id: "9", src: "/dummy.png?9", alt: "아이돌 사진 9" },
-    { id: "10", src: "/dummy.png?10", alt: "아이돌 사진 10" },
-    { id: "11", src: "/dummy.png?11", alt: "아이돌 사진 11" },
-    { id: "12", src: "/dummy.png?12", alt: "아이돌 사진 12" },
-    { id: "10", src: "/dummy.png?10", alt: "아이돌 사진 10" },
-    { id: "11", src: "/dummy.png?11", alt: "아이돌 사진 11" },
-    { id: "12", src: "/dummy.png?12", alt: "아이돌 사진 12" },
-  ];
+      try {
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-  const tabs = ["갤러리", "커뮤니티", "아티스트", "기타 정보"];
-  const events = ["MMA 2025"];
-  const years = ["2025", "2024", "2023", "2022"];
+        const groupData = {
+          id: groupName,
+          name: groupName === "ive" ? "아이브 (IVE)" : "그룹명",
+          description: `${groupName}의 StarPick 그룹입니다.`,
+          fanCount: 488
+        };
+
+        const dummyPhotos = Array.from({ length: 15 }, (_, i) => ({
+          id: String(i + 1),
+          src: `/dummy.png?id=${i + 1}`,
+          alt: `${groupData.name} 사진 ${i + 1}`
+        }));
+
+        setGroupInfo(groupData);
+        setPhotos(dummyPhotos);
+        setLoading(false);
+      } catch (err) {
+        console.error("그룹 데이터 로딩 실패:", err);
+        setError("데이터를 불러오는 중 오류가 발생했습니다.");
+        setLoading(false);
+      }
+    };
+
+    fetchGroupData();
+  }, [groupName]);
 
   const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-
-    let path = "/ive";
-    switch (tab) {
-      case "커뮤니티":
-        path += "/community";
-        break;
-      case "아티스트":
-        path += "/artists";
-        break;
-      case "기타 정보":
-        path += "/otherinfo";
-        break;
-      default:
-        path += "/gallery";
-        break;
+    if (!groupName) return;
+    
+    let path = `/${groupName}`;
+    
+    if (tab === "커뮤니티") {
+      path += "/community";
+    } else if (tab === "아티스트") {
+      path += "/artists";
+    } else if (tab === "기타 정보") {
+      path += "/otherinfo";
+    } else {
+      path += "/gallery";
     }
-
-    navigate(path);
+    
+    if (location.pathname !== path) {
+      setActiveTab(tab);
+      navigate(path);
+    }
   };
 
   useEffect(() => {
     const newActiveTab = getActiveTabFromPath(location.pathname);
+    
     if (newActiveTab !== activeTab) {
       setActiveTab(newActiveTab);
     }
-  }, [location.pathname]);
+  }, [location.pathname, activeTab]);
+
+  const handleFollowToggle = () => {
+    setIsFollowing(!isFollowing);
+  };
+
+  const tabs = ["갤러리", "커뮤니티", "아티스트", "기타 정보"];
 
   const renderTabContent = () => {
+    if (loading || !groupInfo) {
+      return (
+        <div className="w-full flex justify-center items-center py-20">
+          <div className="text-center">
+            <Loader size={40} className="mx-auto text-indigo-500 animate-spin mb-4" />
+            <p className="text-gray-600">그룹 정보를 불러오는 중입니다...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="w-full bg-red-50 p-4 rounded-lg text-center my-10">
+          <p className="text-red-600">{error}</p>
+          <button 
+            className="mt-4 px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm"
+            onClick={() => window.location.reload()}
+          >
+            다시 시도하기
+          </button>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case "갤러리":
         return (
@@ -125,7 +178,6 @@ const GroupPage = () => {
                 />
               </div>
 
-              {/* Filters for desktop */}
               <div className="hidden md:block space-y-6 sticky top-4">
                 <FilterGroup
                   title="최근 이벤트"
@@ -149,7 +201,7 @@ const GroupPage = () => {
       case "아티스트":
         return <GroupArtists />;
       case "기타 정보":
-        return <div>그룹 정보가 여기에 표시됩니다.</div>;
+        return <GroupInfo groupInfo={groupInfo} />;
       default:
         return <GroupPhotoGallery photos={photos} />;
     }
@@ -160,13 +212,15 @@ const GroupPage = () => {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <GroupHeader
-          name={groupInfo.name}
-          description={groupInfo.description}
-          fanCount={groupInfo.fanCount}
-          isFollowing={isFollowing}
-          onFollowToggle={handleFollowToggle}
-        />
+        {groupInfo && (
+          <GroupHeader
+            name={groupInfo.name}
+            description={groupInfo.description}
+            fanCount={groupInfo.fanCount}
+            isFollowing={isFollowing}
+            onFollowToggle={handleFollowToggle}
+          />
+        )}
 
         <GroupNavigation
           tabs={tabs}
@@ -176,6 +230,7 @@ const GroupPage = () => {
 
         {renderTabContent()}
       </main>
+      <Footer/>
     </div>
   );
 };
