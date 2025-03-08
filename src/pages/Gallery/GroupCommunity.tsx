@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { Heart, MessageCircle, Calendar, User } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Heart, MessageCircle } from "lucide-react";
 
+// CommunityPostProps 타입 정의
 interface CommunityPostProps {
   id: string;
   title: string;
@@ -10,6 +11,42 @@ interface CommunityPostProps {
   comments: number;
 }
 
+// 스켈레톤 포스트 컴포넌트
+const SkeletonPost = () => {
+  return (
+    <div className="border-b border-blue-100 py-4 animate-pulse">
+      <div className="h-5 bg-gray-200 rounded-md w-3/4 mb-2"></div>
+      <div className="flex items-center space-x-2">
+        <div className="h-3 bg-gray-200 rounded-md w-16"></div>
+        <div className="h-3 bg-gray-200 rounded-md w-3"></div>
+        <div className="h-3 bg-gray-200 rounded-md w-20"></div>
+        <div className="h-3 bg-gray-200 rounded-md w-3"></div>
+        <div className="h-3 bg-gray-200 rounded-md w-12"></div>
+        <div className="h-3 bg-gray-200 rounded-md w-3"></div>
+        <div className="h-3 bg-gray-200 rounded-md w-12"></div>
+      </div>
+    </div>
+  );
+};
+
+// 스켈레톤 카테고리 컴포넌트
+const SkeletonCategories = () => {
+  return (
+    <div className="mb-6 flex items-center w-full justify-between">
+      <div className="flex space-x-2 overflow-x-auto flex-1">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className="h-8 bg-gray-200 rounded-full w-16 animate-pulse"
+          ></div>
+        ))}
+      </div>
+      <div className="h-10 bg-gray-200 rounded-full w-16 animate-pulse"></div>
+    </div>
+  );
+};
+
+// 개별 커뮤니티 포스트 컴포넌트
 const CommunityPost: React.FC<CommunityPostProps> = ({
   title,
   author,
@@ -41,56 +78,55 @@ const CommunityPost: React.FC<CommunityPostProps> = ({
   );
 };
 
+// 그룹 커뮤니티 컴포넌트
 const GroupCommunity: React.FC = () => {
-  // 더미 데이터 (실제로는 API에서 가져올 것)
-  const communityPosts = [
-    {
-      id: "1",
-      title: "아이브 MMA 2025 무대 리뷰",
-      author: "아이브팬01",
-      date: "2025.03.05",
-      likes: 142,
-      comments: 38,
-    },
-    {
-      id: "2",
-      title: "레이 신곡 티저 공개! 여러분의 생각은?",
-      author: "레이사랑해",
-      date: "2025.03.04",
-      likes: 287,
-      comments: 93,
-    },
-    {
-      id: "3",
-      title: "안유진 팬사인회 후기 (+ 사진)",
-      author: "유진러버",
-      date: "2025.03.03",
-      likes: 201,
-      comments: 45,
-    },
-    {
-      id: "4",
-      title: "가을 컴백 소문이 사실인가요?",
-      author: "아이브덕후",
-      date: "2025.03.02",
-      likes: 176,
-      comments: 67,
-    },
-    {
-      id: "5",
-      title: "이서 팬미팅 티켓 오픈 정보",
-      author: "이서바라기",
-      date: "2025.03.01",
-      likes: 223,
-      comments: 52,
-    },
-  ];
-
-  const [activeCategory, setActiveCategory] = useState("전체");
+  const [loading, setLoading] = useState(true);
+  const [communityPosts, setCommunityPosts] = useState<CommunityPostProps[]>([]);
   const categories = ["전체", "공지사항", "팬아트", "후기", "정보"];
+  const [activeCategory, setActiveCategory] = useState("전체");
+
+  // JSON 데이터 로드
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/communityPosts.json").then(
+          data => data.json()
+        )
+
+        // API 응답에서 communityPosts 추출
+        setCommunityPosts(response.communityPosts);
+        
+        // 로딩 지연 시뮬레이션 (개발 테스트용, 실제 배포 시 제거)
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (err) {
+        console.error("데이터 로딩 실패:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // 로딩 중일 때 스켈레톤 UI 표시
+  if (loading) {
+    return (
+      <div className="w-full">
+        <SkeletonCategories />
+        
+        <div className="space-y-4">
+          {Array(5).fill(0).map((_, index) => (
+            <SkeletonPost key={index} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
+      {/* 카테고리 필터 */}
       <div className="mb-6 flex items-center w-full justify-between">
         <div className="flex space-x-2 overflow-x-auto flex-1">
           {categories.map((category) => (
@@ -113,32 +149,41 @@ const GroupCommunity: React.FC = () => {
         </button>
       </div>
 
+      {/* 커뮤니티 게시글 목록 */}
       <div>
-        {communityPosts.map((post) => (
-          <CommunityPost key={post.id} {...post} />
-        ))}
+        {communityPosts.length > 0 ? (
+          communityPosts.map((post) => (
+            <CommunityPost key={post.id} {...post} />
+          ))
+        ) : (
+          <p className="text-center text-gray-500 py-10">게시글이 없습니다.</p>
+        )}
       </div>
-
-      <div className="mt-8 flex justify-center">
-        <div className="flex space-x-2">
-          <button className="w-8 h-8 flex items-center justify-center border border-blue-200 rounded hover:bg-blue-50 transition-colors duration-200">
-            &lt;
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center bg-indigo-300 text-indigo-800 rounded">
-            1
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center border border-blue-200 rounded hover:bg-blue-50 transition-colors duration-200">
-            2
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center border border-blue-200 rounded hover:bg-blue-50 transition-colors duration-200">
-            3
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center border border-blue-200 rounded hover:bg-blue-50 transition-colors duration-200">
-            &gt;
-          </button>
+      
+      {/* 페이지네이션 */}
+      {communityPosts.length > 0 && (
+        <div className="mt-8 flex justify-center">
+          <div className="flex space-x-2">
+            <button className="w-8 h-8 flex items-center justify-center border border-blue-200 rounded hover:bg-blue-50 transition-colors duration-200">
+              &lt;
+            </button>
+            <button className="w-8 h-8 flex items-center justify-center bg-indigo-300 text-indigo-800 rounded">
+              1
+            </button>
+            <button className="w-8 h-8 flex items-center justify-center border border-blue-200 rounded hover:bg-blue-50 transition-colors duration-200">
+              2
+            </button>
+            <button className="w-8 h-8 flex items-center justify-center border border-blue-200 rounded hover:bg-blue-50 transition-colors duration-200">
+              3
+            </button>
+            <button className="w-8 h-8 flex items-center justify-center border border-blue-200 rounded hover:bg-blue-50 transition-colors duration-200">
+              &gt;
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
-export default GroupCommunity;
+
+export default GroupCommunity

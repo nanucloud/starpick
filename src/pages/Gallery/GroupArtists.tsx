@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Music, Calendar, Loader } from "lucide-react";
+import { User, Music } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // API 응답 타입 정의
@@ -18,6 +18,34 @@ interface GroupInfo {
   company: string;
   memberCount: number;
 }
+
+// 스켈레톤 카드 컴포넌트
+const SkeletonCard = () => {
+  return (
+    <div className="border border-gray-200 rounded-lg p-4 bg-gray-100 animate-pulse">
+      <div className="flex items-center">
+        <div className="w-16 h-16 rounded-full bg-gray-300 mr-4"></div>
+        <div className="flex-1">
+          <div className="h-5 bg-gray-300 rounded-md w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded-md w-1/2"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 스켈레톤 그룹 정보 컴포넌트
+const SkeletonGroupInfo = () => {
+  return (
+    <div className="mb-6 bg-gray-100 rounded-lg p-4 animate-pulse">
+      <div className="h-6 bg-gray-300 rounded-md w-1/3 mb-2"></div>
+      <div className="flex gap-4">
+        <div className="h-4 bg-gray-300 rounded-md w-1/4"></div>
+        <div className="h-4 bg-gray-300 rounded-md w-1/5"></div>
+      </div>
+    </div>
+  );
+};
 
 const ArtistCard: React.FC<{ artist: Artist }> = ({ artist }) => {
   return (
@@ -123,11 +151,15 @@ const GroupArtists: React.FC = () => {
   }, []);
 
   if (loading) {
+    // 로딩 중일 때는 로딩 모달 대신 스켈레톤 UI를 보여줌
     return (
-      <div className="w-full flex justify-center items-center py-10">
-        <div className="text-center">
-          <Loader size={30} className="mx-auto text-indigo-500 animate-spin mb-2" />
-          <p className="text-gray-600 text-sm">멤버 정보를 불러오는 중입니다...</p>
+      <div className="w-full mb-32">
+        <SkeletonGroupInfo />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array(6).fill(0).map((_, index) => (
+            <SkeletonCard key={index} />
+          ))}
         </div>
       </div>
     );
